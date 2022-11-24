@@ -8,11 +8,11 @@ SRC    = $(dir $(firstword $(MAKEFILE_LIST)))
 GIT      = git
 RM       = rm
 INSTALL  = install
-CC       = $(CROSS_COMPILE)gcc
+CC       ?= $(CROSS_COMPILE)gcc
 LD       = $(CC)
-STRIP    = $(CROSS_COMPILE)strip
-OBJCOPY  = $(CROSS_COMPILE)objcopy
-OBJDUMP  = $(CROSS_COMPILE)objdump
+STRIP    ?= $(CROSS_COMPILE)strip
+OBJCOPY  ?= $(CROSS_COMPILE)objcopy
+OBJDUMP  ?= $(CROSS_COMPILE)objdump
 PYTHON   = python3
 
 HAS_SWIG := $(shell swig -version 2>/dev/null)
@@ -23,7 +23,7 @@ HAS_PYTHON_CONFIG := $(shell ${PYTHON}-config --ldflags ${PYTHON_EMBED} 2>/dev/n
 CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I. -I$(VPATH)
 CFLAGS   += -g -Wall -Wextra -O2
 CFLAGS   += $(shell pkg-config --cflags talloc)
-LDFLAGS  += -Wl,-z,noexecstack
+LDFLAGS  += -ltalloc -Wl,-z,noexecstack
 LDFLAGS  += $(shell pkg-config --libs talloc)
 
 CARE_LDFLAGS  = $(shell pkg-config --libs libarchive)
@@ -64,7 +64,12 @@ OBJECTS += \
 	extension/extension.o	\
 	extension/kompat/kompat.o \
 	extension/fake_id0/fake_id0.o \
+	extension/sysvipc/sysvipc.o \
+	extension/sysvipc/sysvipc_msg.o \
+	extension/sysvipc/sysvipc_sem.o \
+	extension/sysvipc/sysvipc_shm.o \
 	extension/link2symlink/link2symlink.o \
+	extension/fix_symlink_size/fix_symlink_size.o \
 	extension/portmap/portmap.o \
 	extension/portmap/map.o \
 	loader/loader-wrapped.o

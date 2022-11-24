@@ -1,5 +1,4 @@
 #include "extension/sysvipc/sysvipc.h"
-#include "tracee/seccomp.h"
 #include "syscall/chain.h"
 #include "path/path.h"
 #include "path/temp.h"
@@ -32,6 +31,46 @@ static FilteredSysnum filtered_sysnums[] = {
 	FILTERED_SYSNUM_END,
 };
 
+/**
+ * Restart syscall that caused seccomp event
+ * after changing it in tracee registers
+ *
+ * Syscall that will be restarted will be translated by proot
+ * so SIGSYS handler sees untranslated paths and should leave
+ * them untranslated.
+ */
+void restart_syscall_after_seccomp(Tracee* tracee) {
+	word_t instr_pointer;
+
+	/* Enable restore regs at end of replaced call.  */
+	// tracee->restore_original_regs_after_seccomp_event = true;
+	tracee->restart_how = PTRACE_SYSCALL;
+
+	/* Move the instruction pointer back to the original trap */
+	instr_pointer = peek_reg(tracee, CURRENT, INSTR_POINTER);
+	poke_reg(tracee, INSTR_POINTER, instr_pointer - get_systrap_size(tracee));
+
+	/* X86 usually uses orig_rax when selecting syscall,
+	 * but as this code is happening outside syscall handler
+	 * we need to copy orig_eax back to eax.  */
+#if defined(ARCH_X86_64)
+	tracee->_regs[CURRENT].rax = tracee->_regs[CURRENT].orig_rax;
+#elif defined(ARCH_X86)
+	tracee->_regs[CURRENT].eax = tracee->_regs[CURRENT].orig_eax;
+#endif
+
+	/* Write registers. (Omiting special sysnum logic as we're not during syscall
+	 * execution, but we're queueing new syscall to be called) */
+	push_regs(tracee);
+}
+
+/**
+ * Set specified result (negative for errno) and do not restart syscall.
+ */
+void set_result_after_seccomp(Tracee *tracee, word_t result) {
+	poke_reg(tracee, SYSARG_RESULT, result);
+	push_regs(tracee);
+}
 
 static int sysvipc_syscall_common(Tracee *tracee, struct SysVIpcConfig *config, bool from_sigsys) {
 	int status = 0;

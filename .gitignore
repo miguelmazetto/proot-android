@@ -23,3 +23,5 @@ test/*
 !test/*.py
 !test/*.mk
 !test/docker
+talloc-*
+build/

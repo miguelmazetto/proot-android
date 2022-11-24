@@ -113,7 +113,10 @@ typedef unsigned char byte_t;
 #elif defined(ARCH_ARM64)
 
     #define SYSNUMS_HEADER1 "syscall/sysnums-arm64.h"
+    #define SYSNUMS_HEADER2 "syscall/sysnums-arm.h"
+
     #define SYSNUMS_ABI1    sysnums_arm64
+    #define SYSNUMS_ABI2    sysnums_arm
 
     #define SYSTRAP_SIZE 4
 
@@ -121,7 +124,10 @@ typedef unsigned char byte_t;
         #define AUDIT_ARCH_AARCH64 (EM_AARCH64 | __AUDIT_ARCH_64BIT | __AUDIT_ARCH_LE)
     #endif
 
-    #define SECCOMP_ARCHS { { .value = AUDIT_ARCH_AARCH64, .nb_abis = 1, .abis = { ABI_DEFAULT } } }
+    #define SECCOMP_ARCHS {									\
+		{ .value = AUDIT_ARCH_AARCH64, .nb_abis = 1, .abis = { ABI_DEFAULT } },	\
+		{ .value = AUDIT_ARCH_ARM,     .nb_abis = 1, .abis = { ABI_2 } }, 		\
+	}
 
     #define HOST_ELF_MACHINE {183, 0};
     #define RED_ZONE_SIZE 0

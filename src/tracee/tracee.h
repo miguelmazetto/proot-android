@@ -204,6 +204,9 @@ typedef struct tracee {
 	 * execve sysexit.  */
 	struct load_info *load_info;
 
+#ifdef ARCH_ARM64
+	bool is_aarch32;
+#endif
 
 	/**********************************************************************
 	 * Private but inherited resources                                    *
@@ -285,5 +288,8 @@ extern void terminate_tracee(Tracee *tracee);
 extern void free_terminated_tracees();
 extern int swap_config(Tracee *tracee1, Tracee *tracee2);
 extern void kill_all_tracees();
+
+typedef LIST_HEAD(tracees, tracee) Tracees;
+extern Tracees *get_tracees_list_head();
 
 #endif /* TRACEE_H */

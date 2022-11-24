@@ -125,7 +125,7 @@ void chain_next_syscall(Tracee *tracee)
 
 	/* Move the instruction pointer back to the original trap.  */
 	instr_pointer = peek_reg(tracee, CURRENT, INSTR_POINTER);
-	poke_reg(tracee, INSTR_POINTER, instr_pointer - SYSTRAP_SIZE);
+	poke_reg(tracee, INSTR_POINTER, instr_pointer - get_systrap_size(tracee));
 }
 
 /**
@@ -155,7 +155,7 @@ int restart_original_syscall(Tracee *tracee)
 
 	/* Move the instruction pointer back to the original trap.  */
 	poke_reg(tracee, INSTR_POINTER,
-		peek_reg(tracee, CURRENT, INSTR_POINTER) - SYSTRAP_SIZE);
+		peek_reg(tracee, CURRENT, INSTR_POINTER) - get_systrap_size(tracee));
 
 	return 0;
 }

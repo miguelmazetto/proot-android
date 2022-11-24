@@ -28,6 +28,7 @@
 #include "cli/cli.h"
 #include "cli/note.h"
 #include "extension/extension.h"
+#include "extension/sysvipc/sysvipc.h"
 #include "path/binding.h"
 #include "attribute.h"
 
@@ -320,6 +321,24 @@ static int handle_option_n(Tracee *tracee, const Cli *cli UNUSED, const char *va
 	status = activate_netcoop_mode();
 
 	return status;
+}
+
+static int handle_option_sysvipc(Tracee *tracee, const Cli *cli UNUSED, const char *value UNUSED)
+{
+	int status;
+
+	/* Initialize the sysvipc extension.  */
+	status = initialize_extension(tracee, sysvipc_callback, NULL);
+	if (status < 0)
+		note(tracee, WARNING, INTERNAL, "sysvipc not initialized");
+
+	return 0;
+}
+
+static int handle_option_L(Tracee *tracee, const Cli *cli UNUSED, const char *value UNUSED)
+{
+        (void) initialize_extension(tracee, fix_symlink_size_callback, NULL);
+        return 0;
 }
 
 #ifdef HAVE_PYTHON_EXTENSION

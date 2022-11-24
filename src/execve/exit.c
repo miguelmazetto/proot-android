@@ -418,6 +418,11 @@ void translate_execve_exit(Tracee *tracee)
 		poke_reg(tracee, RTLD_FINI, 0);
 		poke_reg(tracee, STATE_FLAGS, 0);
 
+#if defined(ARCH_ARM_EABI) && defined(__thumb__)
+		/* Leave ARM thumb mode */
+		tracee->_regs[CURRENT].ARM_cpsr &= ~PSR_T_BIT;
+#endif
+
 		/* Restore registers to their current values.  */
 		save_current_regs(tracee, ORIGINAL);
 		tracee->_regs_were_changed = true;
@@ -446,6 +451,10 @@ void translate_execve_exit(Tracee *tracee)
 
 		return;
 	}
+
+#ifdef ARCH_ARM64
+	tracee->is_aarch32 = IS_CLASS32(tracee->load_info->elf_header);
+#endif
 
 	syscall_result = peek_reg(tracee, CURRENT, SYSARG_RESULT);
 	if ((int) syscall_result < 0)

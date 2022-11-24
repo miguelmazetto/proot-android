@@ -135,6 +135,23 @@ typedef enum {
     /* Called for every already opened file descriptor:
      * "(const char *)" data1" is the path, "(int) data2" is the file descriptor" */
     ALREADY_OPENED_FD,
+    
+	/* A SIGSYS has occurred and we are going to see if any of the extensions wants to handle it for us*/
+	SIGSYS_OCC,
+
+        /* link2symlink notifies other extensions when it is moving
+         * a file */
+        LINK2SYMLINK_RENAME,
+
+        /* link2symlink notifies other extensions when it is unlinking
+         * a file */
+        LINK2SYMLINK_UNLINK,
+
+	/* statx() syscall was used by tracee and is being replaced by proot
+	 * data1 argument contains pointer to statx_syscall_state struct
+	 * defined in tracee/statx.h
+	 * */
+	STATX_SYSCALL,
 } ExtensionEvent;
 
 #define CLONE_RECONF ((word_t) -1)
@@ -192,6 +209,7 @@ extern int fake_id0_callback(Extension *extension, ExtensionEvent event, intptr_
 extern int care_callback(Extension *extension, ExtensionEvent event, intptr_t d1, intptr_t d2);
 extern int python_callback(Extension *extension, ExtensionEvent event, intptr_t d1, intptr_t d2);
 extern int link2symlink_callback(Extension *extension, ExtensionEvent event, intptr_t d1, intptr_t d2);
+extern int fix_symlink_size_callback(Extension *extension, ExtensionEvent event, intptr_t d1, intptr_t d2);
 
 /* Added extensions.  */
 /**
