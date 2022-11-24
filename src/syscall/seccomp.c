@@ -354,6 +354,9 @@ static FilteredSysnum proot_sysnums[] = {
 	{ PR_getsockname,	FILTER_SYSEXIT },
 	{ PR_getxattr,		0 },
 	{ PR_inotify_add_watch,	0 },
+#ifdef __ANDROID__
+	{ PR_ioctl,		0 },
+#endif
 	{ PR_lchown,		0 },
 	{ PR_lchown32,		0 },
 	{ PR_lgetxattr,		0 },
@@ -365,6 +368,9 @@ static FilteredSysnum proot_sysnums[] = {
 	{ PR_lsetxattr,		0 },
 	{ PR_lstat,		0 },
 	{ PR_lstat64,		0 },
+#ifdef __ANDROID__
+	{ PR_memfd_create,	0 },
+#endif
 	{ PR_mkdir,		0 },
 	{ PR_mkdirat,		0 },
 	{ PR_mknod,		0 },
@@ -391,11 +397,11 @@ static FilteredSysnum proot_sysnums[] = {
 	{ PR_setxattr,		0 },
 	{ PR_socketcall,	FILTER_SYSEXIT },
 	{ PR_stat,		0 },
-	{ PR_statx,		0 },
+	{ PR_statx,		FILTER_SYSEXIT },
 	{ PR_faccessat2,	0 },
 	{ PR_stat64,		0 },
-	{ PR_statfs,		0 },
-	{ PR_statfs64,		0 },
+	{ PR_statfs,		FILTER_SYSEXIT },
+	{ PR_statfs64,		FILTER_SYSEXIT },
 	{ PR_swapoff,		0 },
 	{ PR_swapon,		0 },
 	{ PR_symlink,		0 },
@@ -408,7 +414,7 @@ static FilteredSysnum proot_sysnums[] = {
 	{ PR_unlink,		0 },
 	{ PR_unlinkat,		0 },
 	{ PR_uselib,		0 },
-	{ PR_utime,		0 },
+	{ PR_utime,		FILTER_SYSEXIT },
 	{ PR_utimensat,		0 },
 	{ PR_utimensat_time64,		0 },
 	{ PR_utimes,		0 },

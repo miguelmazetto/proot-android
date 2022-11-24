@@ -28,6 +28,8 @@
 #include <limits.h>      /* PATH_MAX, */
 #include <string.h>      /* strcpy */
 #include <sys/prctl.h>   /* PR_SET_DUMPABLE */
+#include <termios.h>     /* TCSETS, TCSANOW */
+
 #include "syscall/syscall.h"
 #include "syscall/sysnum.h"
 #include "syscall/socket.h"
@@ -394,7 +396,6 @@ int translate_syscall_enter(Tracee *tracee)
 	case PR_fchownat:
 	case PR_fstatat64:
 	case PR_newfstatat:
-	case PR_statx:
 	case PR_utimensat:
 	case PR_utimensat_time64:
 	case PR_name_to_handle_at:
@@ -407,9 +408,7 @@ int translate_syscall_enter(Tracee *tracee)
 		flags = (  syscall_number == PR_fchownat
 			|| syscall_number == PR_name_to_handle_at)
 			? peek_reg(tracee, CURRENT, SYSARG_5)
-			: ((syscall_number == PR_statx) ?
-			   peek_reg(tracee, CURRENT, SYSARG_3) :
-			   peek_reg(tracee, CURRENT, SYSARG_4));
+			: peek_reg(tracee, CURRENT, SYSARG_4);
 
 		if ((flags & AT_SYMLINK_NOFOLLOW) != 0)
 			status = translate_path2(tracee, dirfd, path, SYSARG_2, SYMLINK);
@@ -572,6 +571,22 @@ int translate_syscall_enter(Tracee *tracee)
 		status = translate_path2(tracee, newdirfd, newpath, SYSARG_3, SYMLINK);
 		break;
 
+	case PR_statx:
+		newdirfd = peek_reg(tracee, CURRENT, SYSARG_1);
+
+		status = get_sysarg_path(tracee, newpath, SYSARG_2);
+		if (status < 0)
+			break;
+
+		status = translate_path2(
+			tracee,
+			newdirfd,
+			newpath,
+			SYSARG_2,
+			(peek_reg(tracee, CURRENT, SYSARG_3) & AT_SYMLINK_NOFOLLOW) ? SYMLINK : REGULAR
+		);
+		break;
+
 	case PR_prctl:
 		/* Prevent tracees from setting dumpable flag.
 		 * (Otherwise it could break tracee memory access)  */
@@ -580,7 +595,32 @@ int translate_syscall_enter(Tracee *tracee)
 			status = 0;
 		}
 		break;
+
+#ifdef __ANDROID__
+	case PR_ioctl:
+		/* Using literal value because Termux build system patches TCSAFLUSH */
+		if (peek_reg(tracee, CURRENT, SYSARG_2) == TCSETS + 2 /* + TCSAFLUSH */) {
+			poke_reg(tracee, SYSARG_2, TCSETS + TCSANOW);
+		}
+		break;
+#endif
+	
+	case PR_memfd_create:
+		{
+			char memfd_name[20] = {};
+			if (read_string(tracee, memfd_name, peek_reg(tracee, CURRENT, SYSARG_1), sizeof(memfd_name) - 1) < 0) {
+				/* Failed to read memfd name, do nothing and let normal memfd proceed.  */
+				break;
+			}
+			/* If this memfd is one of those used by Qt/QML for executable code,
+			 * deny memfd_create() call and let Qt fall back to anonymous mmap.  */
+			if (0 == strncmp(memfd_name, "JITCode:", 8)) {
+				status = -EACCES;
+			}
+			break;
+		}
 	}
+
 
 end:
 	status2 = notify_extensions(tracee, SYSCALL_ENTER_END, status, 0);
